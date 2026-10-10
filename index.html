@@ -681,7 +681,7 @@ async function loadPublished() {
       if (previewMarker) { previewMarker.remove(); previewMarker = null; }
     }
 
-  async function saveForm() {
+async function saveForm() {
   if (!isAuthed) return;
 
   const name = $('fName').value.trim();
@@ -690,14 +690,53 @@ async function loadPublished() {
   const lat = parseFloat($('fLat').value);
   const lng = parseFloat($('fLng').value);
   if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
-    alert('Set a valid location. Use "Click Map to Set Location" or enter coordinates.');
+    alert('Set a valid location.');
     return;
   }
 
   if (!db) {
-    alert('Supabase is not connected. Check your SUPABASE_URL and SUPABASE_ANON_KEY in the code.');
+    alert('Supabase not connected.');
     return;
   }
+
+  const payload = {
+    name,
+    species: $('fSpecies').value.trim(),
+    tag: $('fTag').value,
+    condition: $('fCondition').value,
+    location: $('fLocation').value.trim(),
+    description: $('fDescription').value.trim(),
+    photo: $('fPhoto').value.trim(),
+    lat,
+    lng
+  };
+
+  $('fSave').textContent = 'Saving…';
+  $('fSave').disabled = true;
+
+  try {
+    let res;
+    if (editingId) {
+      res = await db.from('trees').update(payload).eq('id', editingId);
+    } else {
+      res = await db.from('trees').insert(payload);
+    }
+
+    if (res.error) {
+      alert('Save failed: ' + res.error.message);
+    } else {
+      hideForm();
+      await loadPublished();
+      refreshDisplayed();
+    }
+  } catch (e) {
+    alert('Save error: ' + e.message);
+  }
+
+  $('fSave').textContent = 'Save';
+  $('fSave').disabled = false;
+}
+
 
   const payload = {
     name,
