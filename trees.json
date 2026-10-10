@@ -1,0 +1,38 @@
+[
+  {
+    "id": "sample-1",
+    "name": "Sample Oak — replace me",
+    "species": "Quercus sp.",
+    "tag": "tree",
+    "condition": "unknown",
+    "location": "Near central lawn",
+    "description": "Sample record for testing. Replace with a real tree record and verified GPS point.",
+    "photo": "",
+    "lat": 36.30255,
+    "lng": -86.6039
+  },
+  {
+    "id": "sample-2",
+    "name": "Sample Ginkgo — replace me",
+    "species": "Ginkgo biloba",
+    "tag": "tree",
+    "condition": "unknown",
+    "location": "Near walkway",
+    "description": "Ginkgo is a living fossil with fan-shaped leaves and bright yellow fall color.",
+    "photo": "",
+    "lat": 36.30282,
+    "lng": -86.60345
+  },
+  {
+    "id": "sample-3",
+    "name": "Sample Red Maple — replace me",
+    "species": "Acer rubrum",
+    "tag": "tree",
+    "condition": "unknown",
+    "location": "North side sample",
+    "description": "Red maple is common in Middle Tennessee with red flowers, green leaves, and red fall color.",
+    "photo": "",
+    "lat": 36.30265,
+    "lng": -86.60335
+  }
+]
