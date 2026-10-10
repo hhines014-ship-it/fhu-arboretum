@@ -810,7 +810,7 @@
         .sort((a, b) => a.name.localeCompare(b.name));
 
       if (!filtered.length) {
-        listEl.innerHTML = '<div class="empty">No trees found. In admin mode, use “Add Tree” to create a record.</div>';
+        listEl.innerHTML = '<div class="empty">No trees found. In admin mode, use "Add Tree" to create a record.</div>';
         return;
       }
 
@@ -1066,36 +1066,36 @@
       refreshDisplayed();
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      $('btnAdd').addEventListener('click', () => showForm());
-      $('btnExport').addEventListener('click', exportTrees);
-      $('btnImport').addEventListener('click', () => $('importFile').click());
-      $('btnResetPublished').addEventListener('click', resetPublished);
-      $('btnCenter').addEventListener('click', centerCampus);
-      $('btnFit').addEventListener('click', fitTrees);
-      $('adminToggle').addEventListener('click', () => setAdminMode(!adminMode));
-      $('fSave').addEventListener('click', saveForm);
-      $('fCancel').addEventListener('click', hideForm);
-      $('fDelete').addEventListener('click', deleteCurrentTree);
-      $('fPick').addEventListener('click', () => setPicking(true));
-      $('search').addEventListener('input', renderList);
-      $('importFile').addEventListener('change', importTrees);
+    // Initialize
+    $('btnAdd').addEventListener('click', () => showForm());
+    $('btnExport').addEventListener('click', exportTrees);
+    $('btnImport').addEventListener('click', () => $('importFile').click());
+    $('btnResetPublished').addEventListener('click', resetPublished);
+    $('btnCenter').addEventListener('click', centerCampus);
+    $('btnFit').addEventListener('click', fitTrees);
+    $('adminToggle').addEventListener('click', () => setAdminMode(!adminMode));
+    $('fSave').addEventListener('click', saveForm);
+    $('fCancel').addEventListener('click', hideForm);
+    $('fDelete').addEventListener('click', deleteCurrentTree);
+    $('fPick').addEventListener('click', () => setPicking(true));
+    $('search').addEventListener('input', renderList);
+    $('importFile').addEventListener('change', importTrees);
 
-      map.on('click', (event) => {
-        if (picking) {
-          setPickingCoords(event.latlng.lat, event.latlng.lng);
-        }
-      });
+    map.on('click', (event) => {
+      if (picking) {
+        setPickingCoords(event.latlng.lat, event.latlng.lng);
+      }
+    });
 
-      document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && $('viewForm').classList.contains('hidden') === false) {
-          hideForm();
-        }
-      });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && $('viewForm').classList.contains('hidden') === false) {
+        hideForm();
+      }
+    });
 
-      loadPublished().then(() => {
-        refreshDisplayed();
-      });
+    // Load data on startup
+    loadPublished().then(() => {
+      refreshDisplayed();
     });
   </script>
 </body>
