@@ -320,7 +320,7 @@
     /* ── Supabase config ────────────────────────────────────── */
     const SUPABASE_URL = 'https://yaqqiyezxrvibxecjsms.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_5DfIguCSTV-uZKx1LZifXw_lSXFm_Nj';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     /* ── Shortcuts & config ─────────────────────────────────── */
     const $ = (id) => document.getElementById(id);
@@ -519,7 +519,7 @@
           } else if (action === 'delete') {
             if (!adminMode) return;
             if (confirm('Delete \u201C' + tree.name + '\u201D?')) {
-              supabase.from('trees').delete().eq('id', tree.id).then(({ error }) => {
+              db.from('trees').delete().eq('id', tree.id).then(({ error }) => {
                 if (error) { alert('Delete failed: ' + error.message); return; }
                 loadPublished().then(refreshDisplayed);
               });
@@ -686,10 +686,10 @@
       $('fSave').textContent = 'Saving\u2026';
       let error = null;
       if (editingId) {
-        const res = await supabase.from('trees').update(payload).eq('id', editingId);
+        const res = await db.from('trees').update(payload).eq('id', editingId);
         error = res.error;
       } else {
-        const res = await supabase.from('trees').insert(payload);
+        const res = await db.from('trees').insert(payload);
         error = res.error;
       }
       $('fSave').textContent = 'Save';
@@ -740,7 +740,7 @@
       const tree = trees.find((t) => t.id === editingId);
       if (!tree) return;
       if (confirm('Delete \u201C' + tree.name + '\u201D?')) {
-        supabase.from('trees').delete().eq('id', editingId).then(({ error }) => {
+        db.from('trees').delete().eq('id', editingId).then(({ error }) => {
           if (error) { alert('Delete failed: ' + error.message); return; }
           hideForm();
           loadPublished().then(refreshDisplayed);
