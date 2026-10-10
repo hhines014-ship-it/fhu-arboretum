@@ -531,14 +531,22 @@
             if (!isAuthed) return;
             showForm(tree);
           } else if (action === 'delete') {
-            if (!isAuthed) return;
-            if (confirm('Delete \u201C' + tree.name + '\u201D?')) {
-              db.from('trees').delete().eq('id', tree.id).then(({ error }) => {
-                if (error) { alert('Delete failed: ' + error.message); return; }
-                loadPublished().then(refreshDisplayed);
-              });
-            }
-          }
+  if (!isAuthed) return;
+  if (confirm('Delete \u201C' + tree.name + '\u201D?')) {
+    // Remove from local list immediately so UI updates instantly
+    publishedTrees = publishedTrees.filter(t => t.id !== tree.id);
+    trees = publishedTrees;
+    renderMarkers();
+    renderList();
+    // Then sync with Supabase
+    db.from('trees').delete().eq('id', tree.id).then(({ error }) => {
+      if (error) {
+        alert('Delete failed: ' + error.message);
+        loadPublished().then(refreshDisplayed);
+      }
+    });
+  }
+}
         });
       });
       return card;
@@ -608,9 +616,10 @@ async function loadPublished() {
     publishedTrees = (data || []).map(normalizeTree).filter(t => t.lat !== null);
   } catch (err) {
     console.error('Supabase load failed:', err);
-    publishedTrees = [];
+    // Do NOT wipe publishedTrees. Keep what we already have.
   }
 }
+
 
 
     /* ── Form ───────────────────────────────────────────────── */
@@ -798,19 +807,25 @@ $('signOutBtn').addEventListener('click', async () => {
     $('fLat').addEventListener('input', updatePreviewFromForm);
     $('fLng').addEventListener('input', updatePreviewFromForm);
     $('search').addEventListener('input', renderList);
-
-    $('fDelete').addEventListener('click', () => {
-      if (!isAuthed || !editingId) return;
-      const tree = trees.find((t) => t.id === editingId);
-      if (!tree) return;
-      if (confirm('Delete \u201C' + tree.name + '\u201D?')) {
-        db.from('trees').delete().eq('id', editingId).then(({ error }) => {
-          if (error) { alert('Delete failed: ' + error.message); return; }
-          hideForm();
-          loadPublished().then(refreshDisplayed);
-        });
+$('fDelete').addEventListener('click', () => {
+  if (!isAuthed || !editingId) return;
+  const tree = trees.find((t) => t.id === editingId);
+  if (!tree) return;
+  if (confirm('Delete \u201C' + tree.name + '\u201D?')) {
+    publishedTrees = publishedTrees.filter(t => t.id !== editingId);
+    trees = publishedTrees;
+    hideForm();
+    renderMarkers();
+    renderList();
+    db.from('trees').delete().eq('id', editingId).then(({ error }) => {
+      if (error) {
+        alert('Delete failed: ' + error.message);
+        loadPublished().then(refreshDisplayed);
       }
     });
+  }
+});
+
 
     map.on('click', (e) => {
       if (picking) setPickingCoords(e.latlng.lat, e.latlng.lng);
