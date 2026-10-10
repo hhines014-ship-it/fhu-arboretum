@@ -662,45 +662,61 @@
       if (previewMarker) { previewMarker.remove(); previewMarker = null; }
     }
 
-    async function saveForm() {
-      if (!adminMode) return;
-      const name = $('fName').value.trim();
-      if (!name) { alert('Common name is required.'); return; }
-      const lat = parseFloat($('fLat').value);
-      const lng = parseFloat($('fLng').value);
-      if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
-        alert('Set a valid location. Use \u201CClick Map to Set Location\u201D or enter coordinates.');
-        return;
-      }
-      const payload = {
-        name,
-        species: $('fSpecies').value.trim(),
-        tag: $('fTag').value,
-        condition: $('fCondition').value,
-        location: $('fLocation').value.trim(),
-        description: $('fDescription').value.trim(),
-        photo: $('fPhoto').value.trim(),
-        lat,
-        lng
-      };
-      $('fSave').textContent = 'Saving\u2026';
-      let error = null;
-      if (editingId) {
-        const res = await db.from('trees').update(payload).eq('id', editingId);
-        error = res.error;
-      } else {
-        const res = await db.from('trees').insert(payload);
-        error = res.error;
-      }
-      $('fSave').textContent = 'Save';
-      if (error) {
-        alert('Save failed: ' + error.message);
-        return;
-      }
+  async function saveForm() {
+  if (!adminMode) return;
+
+  const name = $('fName').value.trim();
+  if (!name) { alert('Common name is required.'); return; }
+
+  const lat = parseFloat($('fLat').value);
+  const lng = parseFloat($('fLng').value);
+  if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+    alert('Set a valid location. Use "Click Map to Set Location" or enter coordinates.');
+    return;
+  }
+
+  if (!db) {
+    alert('Supabase is not connected. Check your SUPABASE_URL and SUPABASE_ANON_KEY in the code.');
+    return;
+  }
+
+  const payload = {
+    name,
+    species: $('fSpecies').value.trim(),
+    tag: $('fTag').value,
+    condition: $('fCondition').value,
+    location: $('fLocation').value.trim(),
+    description: $('fDescription').value.trim(),
+    photo: $('fPhoto').value.trim(),
+    lat,
+    lng
+  };
+
+  $('fSave').textContent = 'Saving…';
+  $('fSave').disabled = true;
+
+  try {
+    let res;
+    if (editingId) {
+      res = await db.from('trees').update(payload).eq('id', editingId);
+    } else {
+      res = await db.from('trees').insert(payload);
+    }
+
+    if (res.error) {
+      alert('Save failed: ' + res.error.message);
+    } else {
       hideForm();
       await loadPublished();
       refreshDisplayed();
     }
+  } catch (e) {
+    alert('Save error: ' + e.message);
+  }
+
+  $('fSave').textContent = 'Save';
+  $('fSave').disabled = false;
+}
 
     function exportData() {
       const blob = new Blob([JSON.stringify(publishedTrees, null, 2)], { type: 'application/json' });
