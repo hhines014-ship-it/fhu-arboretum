@@ -564,6 +564,7 @@
     ];
 
     const map = L.map('map').setView(config.center, config.zoom);
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 19
@@ -572,10 +573,10 @@
     let publishedTrees = [];
     let trees = [];
     let adminMode = false;
-    const markers = new Map();
     let previewMarker = null;
     let picking = false;
     let editingId = null;
+    const markers = new Map();
 
     function uid() {
       return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
@@ -678,6 +679,7 @@
           <a class="btn btn-small" href="${appleMapsUrl(tree.lat, tree.lng)}" target="_blank" rel="noopener">Apple Maps</a>
         </div>
       `;
+
       return el;
     }
 
@@ -713,6 +715,7 @@
       card.querySelectorAll('[data-action]').forEach((btn) => {
         btn.addEventListener('click', () => {
           const action = btn.dataset.action;
+
           if (action === 'view') {
             map.setView([tree.lat, tree.lng], Math.max(map.getZoom(), 18));
             const marker = markers.get(tree.id);
@@ -726,13 +729,16 @@
           } else if (action === 'delete') {
             if (!adminMode) return;
             if (confirm(`Delete "${tree.name}"?`)) {
-              supabase.from('trees').delete().eq('id', tree.id).then(({ error }) => {
-                if (error) {
-                  alert('Delete failed: ' + error.message);
-                  return;
-                }
-                loadPublished().then(refreshDisplayed);
-              });
+              supabase.from('trees')
+                .delete()
+                .eq('id', tree.id)
+                .then(({ error }) => {
+                  if (error) {
+                    alert('Delete failed: ' + error.message);
+                    return;
+                  }
+                  loadPublished().then(refreshDisplayed);
+                });
             }
           }
         });
@@ -805,7 +811,10 @@
       const filtered = trees
         .filter((tree) => {
           if (!query) return true;
-          return [tree.name, tree.species, tree.location, tree.description, tree.tag, tree.condition].join(' ').toLowerCase().includes(query);
+          return [tree.name, tree.species, tree.location, tree.description, tree.tag, tree.condition]
+            .join(' ')
+            .toLowerCase()
+            .includes(query);
         })
         .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -930,6 +939,7 @@
       };
 
       let error = null;
+
       if (editingId) {
         const result = await supabase.from('trees').update(payload).eq('id', editingId);
         error = result.error;
@@ -950,6 +960,7 @@
 
     async function deleteCurrentTree() {
       if (!adminMode || !editingId) return;
+
       const tree = publishedTrees.find((item) => item.id === editingId);
       if (!tree) return;
 
@@ -959,6 +970,7 @@
           alert('Delete failed: ' + error.message);
           return;
         }
+
         await loadPublished();
         refreshDisplayed();
         hideForm();
@@ -971,6 +983,7 @@
         map.setView(config.center, config.zoom);
         return;
       }
+
       const bounds = L.latLngBounds(validTrees.map((tree) => [tree.lat, tree.lng]));
       map.fitBounds(bounds.pad(0.25));
     }
@@ -997,7 +1010,10 @@
       reader.onload = async (e) => {
         try {
           const data = JSON.parse(String(e.target?.result || '[]'));
-          const imported = getTreeArray(data).map(normalizeTree).filter((tree) => tree.lat !== null && tree.lng !== null);
+          const imported = getTreeArray(data)
+            .map(normalizeTree)
+            .filter((tree) => tree.lat !== null && tree.lng !== null);
+
           if (!imported.length) {
             alert('No valid tree records were found in that file.');
             return;
@@ -1032,11 +1048,13 @@
           event.target.value = '';
         }
       };
+
       reader.readAsText(file);
     }
 
     async function resetPublished() {
       if (!confirm('Reset the local published list to the seeded sample data?')) return;
+
       const { error } = await supabase.from('trees').delete().neq('id', '');
       if (error) {
         alert('Reset failed: ' + error.message);
@@ -1066,36 +1084,36 @@
       refreshDisplayed();
     }
 
-    // Initialize
-    $('btnAdd').addEventListener('click', () => showForm());
-    $('btnExport').addEventListener('click', exportTrees);
-    $('btnImport').addEventListener('click', () => $('importFile').click());
-    $('btnResetPublished').addEventListener('click', resetPublished);
-    $('btnCenter').addEventListener('click', centerCampus);
-    $('btnFit').addEventListener('click', fitTrees);
-    $('adminToggle').addEventListener('click', () => setAdminMode(!adminMode));
-    $('fSave').addEventListener('click', saveForm);
-    $('fCancel').addEventListener('click', hideForm);
-    $('fDelete').addEventListener('click', deleteCurrentTree);
-    $('fPick').addEventListener('click', () => setPicking(true));
-    $('search').addEventListener('input', renderList);
-    $('importFile').addEventListener('change', importTrees);
+    document.addEventListener('DOMContentLoaded', () => {
+      $('btnAdd').addEventListener('click', () => showForm());
+      $('btnExport').addEventListener('click', exportTrees);
+      $('btnImport').addEventListener('click', () => $('importFile').click());
+      $('btnResetPublished').addEventListener('click', resetPublished);
+      $('btnCenter').addEventListener('click', centerCampus);
+      $('btnFit').addEventListener('click', fitTrees);
+      $('adminToggle').addEventListener('click', () => setAdminMode(!adminMode));
+      $('fSave').addEventListener('click', saveForm);
+      $('fCancel').addEventListener('click', hideForm);
+      $('fDelete').addEventListener('click', deleteCurrentTree);
+      $('fPick').addEventListener('click', () => setPicking(true));
+      $('search').addEventListener('input', renderList);
+      $('importFile').addEventListener('change', importTrees);
 
-    map.on('click', (event) => {
-      if (picking) {
-        setPickingCoords(event.latlng.lat, event.latlng.lng);
-      }
-    });
+      map.on('click', (event) => {
+        if (picking) {
+          setPickingCoords(event.latlng.lat, event.latlng.lng);
+        }
+      });
 
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && $('viewForm').classList.contains('hidden') === false) {
-        hideForm();
-      }
-    });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && $('viewForm').classList.contains('hidden') === false) {
+          hideForm();
+        }
+      });
 
-    // Load data on startup
-    loadPublished().then(() => {
-      refreshDisplayed();
+      loadPublished().then(() => {
+        refreshDisplayed();
+      });
     });
   </script>
 </body>
