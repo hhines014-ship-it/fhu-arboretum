@@ -579,20 +579,21 @@
     }
 
     /* ── Data: Supabase ─────────────────────────────────────── */
-    async function loadPublished() {
-      try {
-        const { data, error } = await supabase
-          .from('trees')
-          .select('*')
-          .order('name');
-        if (error) throw error;
-        const normalized = (data || []).map(normalizeTree).filter((t) => t.lat !== null);
-        publishedTrees = normalized.length ? normalized : [];
-      } catch (err) {
-        console.error('Supabase load failed:', err);
-        publishedTrees = [];
-      }
-    }
+async function loadPublished() {
+  if (!db) { publishedTrees = []; return; }
+  try {
+    const { data, error } = await db
+      .from('trees')
+      .select('*')
+      .order('name');
+    if (error) throw error;
+    publishedTrees = (data || []).map(normalizeTree).filter(t => t.lat !== null);
+  } catch (err) {
+    console.error('Supabase load failed:', err);
+    publishedTrees = [];
+  }
+}
+
 
     /* ── Form ───────────────────────────────────────────────── */
     function showForm(tree = null) {
