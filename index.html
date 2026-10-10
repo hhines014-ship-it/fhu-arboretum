@@ -910,72 +910,55 @@
       }
     }
 
-    async function saveForm() {
-      if (!adminMode) return;
+async function saveForm() {
+  if (!adminMode) return;
 
-      const name = $('fName').value.trim();
-      if (!name) {
-        alert('Common name is required.');
-        return;
-      }
+  const name = $('fName').value.trim();
+  if (!name) { alert('Common name is required.'); return; }
 
-      const lat = parseFloat($('fLat').value);
-      const lng = parseFloat($('fLng').value);
-      if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
-        alert('Set a valid location. Use "Click Map to Set Location" or enter coordinates.');
-        return;
-      }
+  const lat = parseFloat($('fLat').value);
+  const lng = parseFloat($('fLng').value);
+  if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+    alert('Set a valid location. Use "Click Map to Set Location" or enter coordinates.');
+    return;
+  }
 
-      const payload = {
-        name,
-        species: $('fSpecies').value.trim(),
-        tag: $('fTag').value,
-        condition: $('fCondition').value,
-        location: $('fLocation').value.trim(),
-        description: $('fDescription').value.trim(),
-        photo: $('fPhoto').value.trim(),
-        lat,
-        lng
-      };
+  const payload = {
+    name,
+    species: $('fSpecies').value.trim(),
+    tag: $('fTag').value,
+    condition: $('fCondition').value,
+    location: $('fLocation').value.trim(),
+    description: $('fDescription').value.trim(),
+    photo: $('fPhoto').value.trim(),
+    lat,
+    lng
+  };
 
-      let error = null;
+  let error = null;
 
-      if (editingId) {
-        const result = await supabase.from('trees').update(payload).eq('id', editingId);
-        error = result.error;
-      } else {
-        const result = await supabase.from('trees').insert(payload);
-        error = result.error;
-      }
+  if (editingId) {
+    const { error: updateError } = await supabase
+      .from('trees')
+      .update(payload)
+      .eq('id', editingId);
+    error = updateError;
+  } else {
+    const { error: insertError } = await supabase
+      .from('trees')
+      .insert(payload);
+    error = insertError;
+  }
 
-      if (error) {
-        alert('Save failed: ' + error.message);
-        return;
-      }
+  if (error) {
+    alert('Save failed: ' + error.message);
+    return;
+  }
 
-      await loadPublished();
-      refreshDisplayed();
-      hideForm();
-    }
-
-    async function deleteCurrentTree() {
-      if (!adminMode || !editingId) return;
-
-      const tree = publishedTrees.find((item) => item.id === editingId);
-      if (!tree) return;
-
-      if (confirm(`Delete "${tree.name}"?`)) {
-        const { error } = await supabase.from('trees').delete().eq('id', tree.id);
-        if (error) {
-          alert('Delete failed: ' + error.message);
-          return;
-        }
-
-        await loadPublished();
-        refreshDisplayed();
-        hideForm();
-      }
-    }
+  await loadPublished();
+  refreshDisplayed();
+  hideForm();
+}
 
     function fitTrees() {
       const validTrees = trees.filter((tree) => tree.lat != null && tree.lng != null);
