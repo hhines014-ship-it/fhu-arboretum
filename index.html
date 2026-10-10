@@ -512,17 +512,13 @@
 
   <script>
     'use strict';
-    
-const SUPABASE_URL = 'https://yaqqiyezxrvibxecjsms.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_secret_Di7xNWjFQs9Vxj-isWVS8A_7WQv5Bhd';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const SUPABASE_URL = 'https://yaqqiyezxrvibxecjsms.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_secret_Di7xNWjFQs9Vxj-isWVS8A_7WQv5Bhd';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const $ = (id) => document.getElementById(id);
 
-
-
-    // Approximate Freed-Hardeman University campus center.
-    // Replace these coordinates with your preferred campus anchor if needed.
     const config = {
       center: [35.44026, -88.63750],
       zoom: 17
@@ -568,7 +564,6 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     ];
 
     const map = L.map('map').setView(config.center, config.zoom);
-
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 19
@@ -577,16 +572,13 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let publishedTrees = [];
     let trees = [];
     let adminMode = false;
-
     const markers = new Map();
     let previewMarker = null;
     let picking = false;
     let editingId = null;
 
     function uid() {
-      return crypto.randomUUID
-        ? crypto.randomUUID()
-        : Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+      return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
     }
 
     function escapeHtml(value = '') {
@@ -624,12 +616,6 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         createdAt: t.createdAt || t.created_at || new Date().toISOString(),
         updatedAt: t.updatedAt || t.updated_at || new Date().toISOString()
       };
-    }
-
-    function normalizeTrees(data) {
-      return getTreeArray(data)
-        .map(normalizeTree)
-        .filter((tree) => tree.lat !== null && tree.lng !== null);
     }
 
     function safePhotoUrl(url) {
@@ -692,7 +678,6 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
           <a class="btn btn-small" href="${appleMapsUrl(tree.lat, tree.lng)}" target="_blank" rel="noopener">Apple Maps</a>
         </div>
       `;
-
       return el;
     }
 
@@ -728,7 +713,6 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       card.querySelectorAll('[data-action]').forEach((btn) => {
         btn.addEventListener('click', () => {
           const action = btn.dataset.action;
-
           if (action === 'view') {
             map.setView([tree.lat, tree.lng], Math.max(map.getZoom(), 18));
             const marker = markers.get(tree.id);
@@ -740,53 +724,40 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             }
             showForm(tree);
           } else if (action === 'delete') {
-  if (!adminMode) return;
-  if (confirm(`Delete "${tree.name}"?`)) {
-    supabase.from('trees').delete().eq('id', tree.id)
-      .then(({ error }) => {
-        if (error) { alert('Delete failed: ' + error.message); return; }
-        loadPublished().then(refreshDisplayed);
-      });
-  }
-}
+            if (!adminMode) return;
+            if (confirm(`Delete "${tree.name}"?`)) {
+              supabase.from('trees').delete().eq('id', tree.id).then(({ error }) => {
+                if (error) {
+                  alert('Delete failed: ' + error.message);
+                  return;
+                }
+                loadPublished().then(refreshDisplayed);
+              });
+            }
+          }
         });
       });
 
       return card;
     }
 
-   function saveAdmin() {
-  // No-op: Supabase writes happen directly in saveForm/delete actions.
-  // This function is kept so existing calls don't break.
-}
+    async function loadPublished() {
+      try {
+        const { data, error } = await supabase.from('trees').select('*').order('name');
+        if (error) throw error;
+        publishedTrees = (data || []).map(normalizeTree);
+      } catch (err) {
+        console.error('Supabase load failed:', err);
+        publishedTrees = DEFAULT_TREES.map(normalizeTree);
+      }
+    }
 
-    
-async function loadPublished() {
-  try {
-    const { data, error } = await supabase
-      .from('trees')
-      .select('*')
-      .order('name');
-    if (error) throw error;
-    publishedTrees = (data || []).map(normalizeTree);
-  } catch (err) {
-    console.error('Supabase load failed:', err);
-    publishedTrees = DEFAULT_TREES.map(normalizeTree);
-  }
-}
-
-
-    function ensureAdminCopy() {
-  // No longer needed. Supabase is the source of truth.
-}
-
-
-  function refreshDisplayed() {
-  trees = publishedTrees;
-  renderMarkers();
-  renderList();
-  updateAdminUI();
-}
+    function refreshDisplayed() {
+      trees = publishedTrees;
+      renderMarkers();
+      renderList();
+      updateAdminUI();
+    }
 
     function updateAdminUI() {
       ['btnAdd', 'btnExport', 'btnImport', 'btnResetPublished'].forEach((id) => {
@@ -795,11 +766,10 @@ async function loadPublished() {
       $('adminToggle').textContent = adminMode ? 'Admin mode: on' : 'Admin mode: off';
     }
 
-   function setAdminMode(value) {
-  adminMode = value;
-  refreshDisplayed();
-}
-
+    function setAdminMode(value) {
+      adminMode = value;
+      refreshDisplayed();
+    }
 
     function renderMarkers() {
       markers.forEach((marker) => marker.remove());
@@ -835,14 +805,7 @@ async function loadPublished() {
       const filtered = trees
         .filter((tree) => {
           if (!query) return true;
-          return [
-            tree.name,
-            tree.species,
-            tree.location,
-            tree.description,
-            tree.tag,
-            tree.condition
-          ].join(' ').toLowerCase().includes(query);
+          return [tree.name, tree.species, tree.location, tree.description, tree.tag, tree.condition].join(' ').toLowerCase().includes(query);
         })
         .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -851,7 +814,9 @@ async function loadPublished() {
         return;
       }
 
-      filtered.forEach((tree) => listEl.appendChild(makeCardElement(tree)));
+      filtered.forEach((tree) => {
+        listEl.appendChild(makeCardElement(tree));
+      });
     }
 
     function showForm(tree = null) {
@@ -936,61 +901,19 @@ async function loadPublished() {
       }
     }
 
-async function saveForm() {
-  if (!adminMode) return;
+    async function saveForm() {
+      if (!adminMode) return;
 
-  const name = $('fName').value.trim();
-  if (!name) { alert('Common name is required.'); return; }
-
-  const lat = parseFloat($('fLat').value);
-  const lng = parseFloat($('fLng').value);
-  if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
-    alert('Set a valid location. Use "Click Map to Set Location" or enter coordinates.');
-    return;
-  }
-
-  const payload = {
-    name,
-    species: $('fSpecies').value.trim(),
-    tag: $('fTag').value,
-    condition: $('fCondition').value,
-    location: $('fLocation').value.trim(),
-    description: $('fDescription').value.trim(),
-    photo: $('fPhoto').value.trim(),
-    lat,
-    lng
-  };
-
-  let error = null;
-
-  if (editingId) {
-    const { error: updateError } = await supabase
-      .from('trees')
-      .update(payload)
-      .eq('id', editingId);
-    error = updateError;
-  } else {
-    const { error: insertError } = await supabase
-      .from('trees')
-      .insert(payload);
-    error = insertError;
-  }
-
-  if (error) {
-    alert('Save failed: ' + error.message);
-    return;
-  }
-
-  await loadPublished();
-  refreshDisplayed();
-  hideForm();
-}
+      const name = $('fName').value.trim();
+      if (!name) {
+        alert('Common name is required.');
+        return;
+      }
 
       const lat = parseFloat($('fLat').value);
       const lng = parseFloat($('fLng').value);
-
       if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
-        alert('Set a valid location. Use “Click Map to Set Location” or enter latitude/longitude.');
+        alert('Set a valid location. Use "Click Map to Set Location" or enter coordinates.');
         return;
       }
 
@@ -1003,149 +926,177 @@ async function saveForm() {
         description: $('fDescription').value.trim(),
         photo: $('fPhoto').value.trim(),
         lat,
-        lng,
-        updatedAt: new Date().toISOString()
+        lng
       };
 
-      ensureAdminCopy();
-
+      let error = null;
       if (editingId) {
-        const index = adminTrees.findIndex((t) => t.id === editingId);
-        if (index >= 0) {
-          adminTrees[index] = { ...adminTrees[index], ...payload };
-        } else {
-          payload.id = uid();
-          payload.createdAt = payload.updatedAt;
-          adminTrees.push(payload);
-        }
+        const result = await supabase.from('trees').update(payload).eq('id', editingId);
+        error = result.error;
       } else {
-        payload.id = uid();
-        payload.createdAt = payload.updatedAt;
-        adminTrees.push(payload);
+        const result = await supabase.from('trees').insert(payload);
+        error = result.error;
       }
 
-      saveAdmin();
+      if (error) {
+        alert('Save failed: ' + error.message);
+        return;
+      }
+
+      await loadPublished();
       refreshDisplayed();
       hideForm();
     }
 
-    function exportData() {
-      const data = (adminMode && adminTrees.length) ? adminTrees : publishedTrees;
-      const blob = new Blob([JSON.stringify(data, null, 2)], {
-        type: 'application/json'
-      });
+    async function deleteCurrentTree() {
+      if (!adminMode || !editingId) return;
+      const tree = publishedTrees.find((item) => item.id === editingId);
+      if (!tree) return;
+
+      if (confirm(`Delete "${tree.name}"?`)) {
+        const { error } = await supabase.from('trees').delete().eq('id', tree.id);
+        if (error) {
+          alert('Delete failed: ' + error.message);
+          return;
+        }
+        await loadPublished();
+        refreshDisplayed();
+        hideForm();
+      }
+    }
+
+    function fitTrees() {
+      const validTrees = trees.filter((tree) => tree.lat != null && tree.lng != null);
+      if (!validTrees.length) {
+        map.setView(config.center, config.zoom);
+        return;
+      }
+      const bounds = L.latLngBounds(validTrees.map((tree) => [tree.lat, tree.lng]));
+      map.fitBounds(bounds.pad(0.25));
+    }
+
+    function centerCampus() {
+      map.setView(config.center, config.zoom);
+    }
+
+    function exportTrees() {
+      const blob = new Blob([JSON.stringify({ trees: publishedTrees }, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'fhu-arboretum-trees.json';
+      a.download = 'trees-export.json';
       a.click();
       URL.revokeObjectURL(url);
     }
 
-    function importFileChange() {
-      const file = $('importFile').files[0];
+    function importTrees(event) {
+      const file = event.target.files?.[0];
       if (!file) return;
 
       const reader = new FileReader();
-
-      reader.onload = () => {
+      reader.onload = async (e) => {
         try {
-          const parsed = JSON.parse(reader.result);
-          const normalized = normalizeTrees(parsed);
-
-          if (!normalized.length) {
-            throw new Error('No valid records');
+          const data = JSON.parse(String(e.target?.result || '[]'));
+          const imported = getTreeArray(data).map(normalizeTree).filter((tree) => tree.lat !== null && tree.lng !== null);
+          if (!imported.length) {
+            alert('No valid tree records were found in that file.');
+            return;
           }
 
-          adminTrees = normalized;
-          adminMode = true;
+          const rows = imported.map((tree) => ({
+            id: tree.id,
+            name: tree.name,
+            species: tree.species,
+            tag: tree.tag,
+            condition: tree.condition,
+            location: tree.location,
+            description: tree.description,
+            photo: tree.photo,
+            lat: tree.lat,
+            lng: tree.lng
+          }));
 
-          try {
-            localStorage.setItem(ADMIN_MODE_KEY, 'true');
-          } catch {}
+          const { error } = await supabase.from('trees').upsert(rows, { onConflict: 'id' });
+          if (error) {
+            alert('Import failed: ' + error.message);
+            return;
+          }
 
-          saveAdmin();
+          await loadPublished();
           refreshDisplayed();
-          alert(`Imported ${normalized.length} trees into admin mode.`);
-        } catch {
-          alert('Import failed. Make sure the file is valid JSON with lat and lng values.');
+          hideForm();
+        } catch (err) {
+          alert('Import file is not valid JSON.');
+          console.error(err);
         } finally {
-          $('importFile').value = '';
+          event.target.value = '';
         }
       };
-
       reader.readAsText(file);
     }
 
-    $('btnAdd').addEventListener('click', () => showForm(null));
-    $('btnCenter').addEventListener('click', () => map.setView(config.center, config.zoom));
-
-    $('btnFit').addEventListener('click', () => {
-      const valid = trees.filter((tree) => tree.lat !== null && tree.lng !== null);
-
-      if (!valid.length) {
-        map.setView(config.center, config.zoom);
+    async function resetPublished() {
+      if (!confirm('Reset the local published list to the seeded sample data?')) return;
+      const { error } = await supabase.from('trees').delete().neq('id', '');
+      if (error) {
+        alert('Reset failed: ' + error.message);
         return;
       }
 
-      const bounds = L.latLngBounds(valid.map((tree) => [tree.lat, tree.lng]));
-      map.fitBounds(bounds.pad(0.15));
-    });
+      const rows = DEFAULT_TREES.map((tree) => ({
+        id: tree.id,
+        name: tree.name,
+        species: tree.species,
+        tag: tree.tag,
+        condition: tree.condition,
+        location: tree.location,
+        description: tree.description,
+        photo: tree.photo,
+        lat: tree.lat,
+        lng: tree.lng
+      }));
 
-    $('btnExport').addEventListener('click', exportData);
-    $('btnImport').addEventListener('click', () => $('importFile').click());
-
-    $('btnResetPublished').addEventListener('click', async () => {
-      if (!confirm('Replace the admin copy with published trees.json? Unpublished admin changes will be lost.')) return;
+      const insertResult = await supabase.from('trees').upsert(rows, { onConflict: 'id' });
+      if (insertResult.error) {
+        alert('Reset failed: ' + insertResult.error.message);
+        return;
+      }
 
       await loadPublished();
-      adminTrees = publishedTrees.map((t) => ({ ...t }));
-      saveAdmin();
       refreshDisplayed();
-      alert('Published data loaded into admin mode.');
-    });
+    }
 
-    $('fSave').addEventListener('click', saveForm);
-    $('fCancel').addEventListener('click', hideForm);
+    document.addEventListener('DOMContentLoaded', () => {
+      $('btnAdd').addEventListener('click', () => showForm());
+      $('btnExport').addEventListener('click', exportTrees);
+      $('btnImport').addEventListener('click', () => $('importFile').click());
+      $('btnResetPublished').addEventListener('click', resetPublished);
+      $('btnCenter').addEventListener('click', centerCampus);
+      $('btnFit').addEventListener('click', fitTrees);
+      $('adminToggle').addEventListener('click', () => setAdminMode(!adminMode));
+      $('fSave').addEventListener('click', saveForm);
+      $('fCancel').addEventListener('click', hideForm);
+      $('fDelete').addEventListener('click', deleteCurrentTree);
+      $('fPick').addEventListener('click', () => setPicking(true));
+      $('search').addEventListener('input', renderList);
+      $('importFile').addEventListener('change', importTrees);
 
-   $('fDelete').addEventListener('click', () => {
-  if (!adminMode || !editingId) return;
-  const tree = trees.find((t) => t.id === editingId);
-  if (!tree) return;
-  if (confirm(`Delete "${tree.name}"?`)) {
-    supabase.from('trees').delete().eq('id', editingId)
-      .then(({ error }) => {
-        if (error) { alert('Delete failed: ' + error.message); return; }
-        hideForm();
-        loadPublished().then(refreshDisplayed);
+      map.on('click', (event) => {
+        if (picking) {
+          setPickingCoords(event.latlng.lat, event.latlng.lng);
+        }
       });
-  }
-});
 
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && $('viewForm').classList.contains('hidden') === false) {
+          hideForm();
+        }
+      });
 
-    $('fPick').addEventListener('click', () => setPicking(!picking));
-    $('fLat').addEventListener('input', updatePreviewFromForm);
-    $('fLng').addEventListener('input', updatePreviewFromForm);
-    $('search').addEventListener('input', renderList);
-    $('importFile').addEventListener('change', importFileChange);
-
-    $('adminToggle').addEventListener('click', () => {
-      setAdminMode(!adminMode);
+      loadPublished().then(() => {
+        refreshDisplayed();
+      });
     });
-
-    map.on('click', (e) => {
-      if (picking) {
-        setPickingCoords(e.latlng.lat, e.latlng.lng);
-      }
-    });
-
-    window.addEventListener('resize', () => map.invalidateSize());
-
-(async function init() {
-  await loadPublished();
-  refreshDisplayed();
-})();
-
   </script>
 </body>
 </html>
