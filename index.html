@@ -226,6 +226,17 @@
       </div>
 
       <div class="content">
+        <section id="loginPanel" class="form hidden">
+  <h2 class="form-title">Admin Sign In</h2>
+  <label for="authEmail">Email</label>
+  <input id="authEmail" type="email" placeholder="you@university.edu" autocomplete="email">
+  <label for="authPassword">Password</label>
+  <input id="authPassword" type="password" placeholder="••••••••" autocomplete="current-password">
+  <div class="form-actions">
+    <button id="signInBtn" type="button" class="btn btn-primary">Sign In</button>
+    <button id="cancelLogin" type="button" class="btn">Cancel</button>
+  </div>
+</section>
         <section id="viewForm" class="form hidden" aria-live="polite">
           <h2 class="form-title" id="formTitle">Add Tree</h2>
 
@@ -300,10 +311,13 @@
         </section>
       </div>
 
-      <div class="footer">
-        <span>Data: <code>Supabase</code></span>
-        <button id="adminToggle" type="button" class="admin-toggle">Admin: off</button>
-      </div>
+    <div class="footer">
+  <span id="authStatus">Visitor</span>
+  <span>
+    <button id="authToggle" type="button" class="admin-toggle">Sign In</button>
+    <button id="signOutBtn" type="button" class="admin-toggle hidden">Sign Out</button>
+  </span>
+</div>
     </aside>
 
     <div class="map-container">
@@ -376,7 +390,7 @@
     /* ── State ──────────────────────────────────────────────── */
     let trees = [];
     let publishedTrees = [];
-    let adminMode = false;
+    let isAuthed = false;
     let markers = new Map();
     let previewMarker = null;
     let picking = false;
@@ -514,10 +528,10 @@
             const m = markers.get(tree.id);
             if (m) m.openPopup();
           } else if (action === 'edit') {
-            if (!adminMode) return;
+            if (!isAuthed) return;
             showForm(tree);
           } else if (action === 'delete') {
-            if (!adminMode) return;
+            if (!isAuthed) return;
             if (confirm('Delete \u201C' + tree.name + '\u201D?')) {
               db.from('trees').delete().eq('id', tree.id).then(({ error }) => {
                 if (error) { alert('Delete failed: ' + error.message); return; }
@@ -573,10 +587,14 @@
     }
 
     function updateAdminUI() {
-      $('adminToggle').textContent = adminMode ? 'Admin: on' : 'Admin: off';
-      $('btnAdd').classList.toggle('hidden', !adminMode);
-      $('btnExport').classList.toggle('hidden', !adminMode);
-    }
+  $('authStatus').textContent = isAuthed ? 'Admin' : 'Visitor';
+  $('authToggle').classList.toggle('hidden', isAuthed);
+  $('signOutBtn').classList.toggle('hidden', !isAuthed);
+  $('btnAdd').classList.toggle('hidden', !isAuthed);
+  $('btnExport').classList.toggle('hidden', !isAuthed);
+  renderList();
+}
+
 
     /* ── Data: Supabase ─────────────────────────────────────── */
 async function loadPublished() {
@@ -597,7 +615,7 @@ async function loadPublished() {
 
     /* ── Form ───────────────────────────────────────────────── */
     function showForm(tree = null) {
-      if (!adminMode) return;
+      if (!isAuthed) return;
       editingId = tree ? tree.id : null;
       $('formTitle').textContent = tree ? 'Edit Tree' : 'Add Tree';
       $('fDelete').classList.toggle('hidden', !tree);
@@ -664,7 +682,7 @@ async function loadPublished() {
     }
 
   async function saveForm() {
-  if (!adminMode) return;
+  if (!isAuthed) return;
 
   const name = $('fName').value.trim();
   if (!name) { alert('Common name is required.'); return; }
@@ -730,12 +748,41 @@ async function loadPublished() {
     }
 
     /* ── Events ─────────────────────────────────────────────── */
-    $('adminToggle').addEventListener('click', () => {
-      adminMode = !adminMode;
-      if (!adminMode) hideForm();
-      updateAdminUI();
-      renderList();
-    });
+  $('authToggle').addEventListener('click', () => {
+  $('loginPanel').classList.remove('hidden');
+  $('viewForm').classList.add('hidden');
+  $('viewList').classList.add('hidden');
+});
+
+$('cancelLogin').addEventListener('click', () => {
+  $('loginPanel').classList.add('hidden');
+  $('viewList').classList.remove('hidden');
+});
+
+$('signInBtn').addEventListener('click', async () => {
+  const email = $('authEmail').value.trim();
+  const password = $('authPassword').value;
+  if (!email || !password) { alert('Enter email and password.'); return; }
+
+  const { error } = await db.auth.signInWithPassword({ email, password });
+  if (error) {
+    alert('Sign in failed: ' + error.message);
+    return;
+  }
+  isAuthed = true;
+  $('authPassword').value = '';
+  $('loginPanel').classList.add('hidden');
+  $('viewList').classList.remove('hidden');
+  updateAdminUI();
+});
+
+$('signOutBtn').addEventListener('click', async () => {
+  await db.auth.signOut();
+  isAuthed = false;
+  hideForm();
+  updateAdminUI();
+});
+
 
     $('btnAdd').addEventListener('click', () => showForm(null));
     $('btnCenter').addEventListener('click', () => map.setView(config.center, config.zoom));
@@ -753,7 +800,7 @@ async function loadPublished() {
     $('search').addEventListener('input', renderList);
 
     $('fDelete').addEventListener('click', () => {
-      if (!adminMode || !editingId) return;
+      if (!isAuthed || !editingId) return;
       const tree = trees.find((t) => t.id === editingId);
       if (!tree) return;
       if (confirm('Delete \u201C' + tree.name + '\u201D?')) {
@@ -772,10 +819,16 @@ async function loadPublished() {
     window.addEventListener('resize', () => map.invalidateSize());
 
     /* ── Init ───────────────────────────────────────────────── */
-    (async function init() {
-      await loadPublished();
-      refreshDisplayed();
-    })();
+ (async function init() {
+  const { data: { session } } = await db.auth.getSession();
+  isAuthed = !!session;
+  db.auth.onAuthStateChange((_event, sess) => {
+    isAuthed = !!sess;
+    updateAdminUI();
+  });
+  await loadPublished();
+  refreshDisplayed();
+})();
   </script>
 </body>
 </html>
